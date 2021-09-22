@@ -1,0 +1,260 @@
+{
+	"info": {
+		"_postman_id": "3a9b2ba1-d30d-420c-8046-990f2f553e34",
+		"name": "Assignment",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get All Questions",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/qa/getAll",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"getAll"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Question by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/qa/get/ID1",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"get",
+						"ID1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all questions by User",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/qa/getAllByUser/User1",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"getAllByUser",
+						"User1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create new question 1",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ID\": \"ID1\",\r\n    \"Question\":\"This is my question No. 1\",\r\n    \"User\":\"User1\"\r\n}"
+				},
+				"url": {
+					"raw": "localhost:8080/qa/create",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create new question 2",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ID\": \"ID2\",\r\n    \"Question\":\"This is my question No. 2\",\r\n    \"User\":\"User2\"\r\n}"
+				},
+				"url": {
+					"raw": "localhost:8080/qa/create",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create new question 3",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ID\": \"ID3\",\r\n    \"Question\":\"This is my question No. 3\",\r\n    \"User\":\"User1\"\r\n}"
+				},
+				"url": {
+					"raw": "localhost:8080/qa/create",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update existing question 1",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ID\": \"ID1\",\r\n    \"Question\":\"This is my updated question No. 1\",\r\n    \"User\":\"User1\"\r\n}"
+				},
+				"url": {
+					"raw": "localhost:8080/qa/update/ID1",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"update",
+						"ID1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update existing question 2",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ID\": \"ID2\",\r\n    \"Question\":\"This is my question No. 2\",\r\n    \"Answer\":\"The answer to question No. 2\"\r\n}"
+				},
+				"url": {
+					"raw": "localhost:8080/qa/update/ID2",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"update",
+						"ID2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update existing question 3",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ID\": \"ID2\",\r\n    \"Question\":\"This is my question No. 2 with answer removed\",\r\n    \"Answer\":\"\"\r\n}"
+				},
+				"url": {
+					"raw": "localhost:8080/qa/update/ID2",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"update",
+						"ID2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update existing question 4",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ID\": \"ID4\",\r\n    \"Question\":\"This is an unexisting question\",\r\n    \"User\":\"User4\"\r\n}"
+				},
+				"url": {
+					"raw": "localhost:8080/qa/update/ID4",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"update",
+						"ID4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Question by ID",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/qa/delete/ID3",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"qa",
+						"delete",
+						"ID3"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
