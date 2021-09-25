@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type QuestionType struct {
@@ -18,7 +22,9 @@ type QuestionType struct {
 	User     string `json:User`
 }
 
-var questionsPool []QuestionType
+var collection *mongo.Collection
+
+//var clientOptions, client, connection, collection, err interface{}
 
 func get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -28,23 +34,62 @@ func get(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Endpoint Get Hit. Searched ID: ", key)
 
-	for _, question := range questionsPool {
-		if question.ID == key {
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(question)
-			return
-		}
+	filter := bson.D{{"id", key}}
+
+	var result QuestionType
+	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		fmt.Println("Question not found!")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"message": "Question not found"}`))
+		return
 	}
 
-	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte(`{"message": "Question not found"}`))
+	w.WriteHeader(http.StatusOK)
+	fmt.Println("Question found:", result)
+	json.NewEncoder(w).Encode(result)
+
 }
 
 func getAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+
 	fmt.Println("Endpoint GetAll Hit")
-	json.NewEncoder(w).Encode(questionsPool)
+	findOptions := options.Find()
+
+	var results []*QuestionType
+	cur, err := collection.Find(context.TODO(), bson.D{{}}, findOptions)
+	if err != nil {
+		fmt.Println("Error with database!")
+		w.WriteHeader(http.StatusFailedDependency)
+		w.Write([]byte(`{"message": "Error with database!"}`))
+		return
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem QuestionType
+		err := cur.Decode(&elem)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		results = append(results, &elem)
+	}
+
+	if len(results) == 0 {
+		fmt.Println("Empty database!")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"message": "Empty database!"}`))
+		return
+	}
+
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(results)
+
 }
 
 func getAllByUser(w http.ResponseWriter, r *http.Request) {
@@ -53,47 +98,77 @@ func getAllByUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user := vars["user"]
 
-	var userQuestions []QuestionType
-
 	fmt.Println("Endpoint GetAllByUser Hit. Searched user: ", user)
 
-	for _, question := range questionsPool {
-		if question.User == user {
-			userQuestions = append(userQuestions, question)
-		}
-	}
-	if len(userQuestions) != 0 {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(userQuestions)
-		return
-	} else {
+	findOptions := options.Find()
+	filter := bson.D{{"user", user}}
+	var results []*QuestionType
+	cur, err := collection.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		fmt.Println("User not found!")
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"message": "User not found"}`))
+		w.Write([]byte(`{"message": "User not found!"}`))
+		return
 	}
+
+	for cur.Next(context.TODO()) {
+		var elem QuestionType
+		err := cur.Decode(&elem)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		results = append(results, &elem)
+	}
+
+	if len(results) == 0 {
+		fmt.Println("User not found!!")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"message": "User not found!"}`))
+		return
+	}
+
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(results)
+
 }
 
 func create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
 	fmt.Println("Endpoint create Hit")
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	var question QuestionType
 	json.Unmarshal(reqBody, &question)
-	fmt.Println("Storing question", question)
-	exists := false
-	for _, el := range questionsPool {
-		if el.ID == question.ID {
-			exists = true
-			w.Write([]byte(`{"message": "Unable to create question.  ID already exists!"}`))
-		}
+	fmt.Println("Requested question", question)
+
+	filter := bson.D{{"id", question.ID}}
+
+	var result QuestionType
+	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+	if err == nil {
+		fmt.Printf("ID already exists!: %+v\n", result)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message": "Unable to create question.  ID already exists!"}`))
+		return
 	}
 
-	if !exists {
-		questionsPool = append(questionsPool, QuestionType{ID: question.ID, Question: question.Question, Answer: "", Answered: false, User: question.User})
-		fmt.Println("Creating new question")
+	_, err = collection.InsertOne(context.TODO(), question)
+
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message": "Unable to create question.  Error!"}`))
+		return
 	}
 
+	fmt.Println("Storing question")
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "Question posted succesfully"}`))
+
 }
 
 func update(w http.ResponseWriter, r *http.Request) {
@@ -114,26 +189,41 @@ func update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for i, q := range questionsPool {
-		if q.ID == question.ID {
-			questionsPool[i].Question = question.Question
-			questionsPool[i].Answer = question.Answer
-			if question.Answer == "" {
-				questionsPool[i].Answered = false
-			} else {
-				questionsPool[i].Answered = true
-			}
-			if question.User != "" {
-				questionsPool[i].User = question.User
-			}
-			fmt.Println("Updating question", question)
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "Question updated succesfully"}`))
-			return
-		}
+	filter := bson.D{{"id", question.ID}}
+	fmt.Println("filter", filter)
+
+	if question.Answer != "" {
+		question.Answered = true
+	} else {
+		question.Answered = false
 	}
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(`{"message": "Question not found!"}`))
+
+	update := bson.D{{"$set", bson.D{
+		{"question", question.Question},
+		{"answer", question.Answer},
+		{"answered", question.Answered},
+		{"user", question.User},
+	}}}
+
+	updateResult, err := collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message": "DB Error!"}`))
+		return
+	}
+
+	if updateResult.MatchedCount == 0 {
+		fmt.Printf("ID %v not found!\n", question.ID)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message": "Question not found!"}`))
+		return
+	}
+
+	fmt.Println("Updating question", question)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Question updated succesfully"}`))
+
 }
 
 func delete(w http.ResponseWriter, r *http.Request) {
@@ -142,18 +232,28 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	key := vars["id"]
 
 	fmt.Println("Endpoint Delete Hit. Requested ID: ", key)
+	filter := bson.D{{"id", key}}
 
-	for i, question := range questionsPool {
-		if question.ID == key {
-			questionsPool = append(questionsPool[:i], questionsPool[(i+1):]...)
-			fmt.Println("Deleting question", question)
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "Question succesfully deleted."}`))
-			return
-		}
+	deleteResult, err := collection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message": "DB Error!"}`))
+		return
 	}
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(`{"message": "Question not found!"}`))
+
+	if deleteResult.DeletedCount == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println("Question not found!")
+		w.Write([]byte(`{"message": "Question not found!"}`))
+		return
+	}
+
+	fmt.Println("Deleting question", key)
+	fmt.Printf("Deleted %v document in the collection\n", deleteResult.DeletedCount)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Question succesfully deleted."}`))
+
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
@@ -163,6 +263,7 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
 	r := mux.NewRouter()
 	api := r.PathPrefix("/qa/").Subrouter()
 	api.HandleFunc("/get/{id}", get).Methods(http.MethodGet)
@@ -172,6 +273,38 @@ func main() {
 	api.HandleFunc("/update/{id}", update).Methods(http.MethodPut)
 	api.HandleFunc("/delete/{id}", delete).Methods(http.MethodDelete)
 	api.HandleFunc("", notFound)
+
+	// Set client options
+	clientOptions := options.Client().ApplyURI("mongodb+srv://user1:user1!@bd-go-level-vii.oq2dd.mongodb.net/myFirstDatabase")
+
+	// Connect to MongoDB
+	client, err := mongo.Connect(context.TODO(), clientOptions)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Disconnect defer
+	defer func() {
+		err = client.Disconnect(context.TODO())
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Connection to MongoDB closed.")
+	}()
+
+	// Check the connection
+	err = client.Ping(context.TODO(), nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Connected to MongoDB!")
+
+	collection = client.Database("db_questions").Collection("collection_qa")
+	fmt.Println("Server Ready")
+
 	log.Fatal(http.ListenAndServe(":8080", api))
 
 }

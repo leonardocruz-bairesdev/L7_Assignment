@@ -171,7 +171,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"ID\": \"ID2\",\r\n    \"Question\":\"This is my question No. 2\",\r\n    \"Answer\":\"The answer to question No. 2\"\r\n}"
+					"raw": "{\r\n    \"ID\": \"ID2\",\r\n    \"Question\":\"This is my question No. 2\",\r\n    \"Answer\":\"The answer to question No. 2\",\r\n    \"User\":\"User2\"\r\n}"
 				},
 				"url": {
 					"raw": "localhost:8080/qa/update/ID2",
@@ -195,7 +195,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"ID\": \"ID2\",\r\n    \"Question\":\"This is my question No. 2 with answer removed\",\r\n    \"Answer\":\"\"\r\n}"
+					"raw": "{\r\n    \"ID\": \"ID2\",\r\n    \"Question\":\"This is my question No. 2 with answer removed\",\r\n    \"Answer\":\"\",\r\n    \"User\":\"User1\"\r\n}"
 				},
 				"url": {
 					"raw": "localhost:8080/qa/update/ID2",
