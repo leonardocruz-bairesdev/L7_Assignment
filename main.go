@@ -262,8 +262,7 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message": "not found"}`))
 }
 
-func main() {
-
+func NewRouter() (s *mux.Router) {
 	r := mux.NewRouter()
 	api := r.PathPrefix("/qa/").Subrouter()
 	api.HandleFunc("/get/{id}", get).Methods(http.MethodGet)
@@ -284,14 +283,14 @@ func main() {
 		log.Fatal(err)
 	}
 	// Disconnect defer
-	defer func() {
+	/*defer func() {
 		err = client.Disconnect(context.TODO())
 
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("Connection to MongoDB closed.")
-	}()
+	}()*/
 
 	// Check the connection
 	err = client.Ping(context.TODO(), nil)
@@ -304,6 +303,13 @@ func main() {
 
 	collection = client.Database("db_questions").Collection("collection_qa")
 	fmt.Println("Server Ready")
+
+	return api
+}
+
+func main() {
+
+	api := NewRouter()
 
 	log.Fatal(http.ListenAndServe(":8080", api))
 
